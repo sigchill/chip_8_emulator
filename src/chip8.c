@@ -1,4 +1,7 @@
 #include "chip8.h"
+#include <stdio.h>
+#include <string.h>
+
 
 
 /*initial state of chip8,
@@ -32,6 +35,7 @@ void chip8_init(Chip8 *c ){
     c->delay_timer=0;
     c->sound_timer=0;
     chip8_load_font(c);  
+    c->draw_flag=false;
 }
 
 
@@ -72,8 +76,14 @@ DXYN (display/draw) , so we can test it with the ibm logo rom
             switch(opcode){
                 case 0x00E0: //disp_clear , clear gfx
                     memset(c->gfx,0,sizeof(c->gfx));
+                    c->draw_flag=true;
                     break;
-                case 0x00EE: //return , pc = stack[--sp] , like ret in assembly
+                case 0x00EE:
+                     //return , pc = stack[--sp] , like ret in assembly
+                     if(c->sp>0){
+                        c->sp--;
+                        c->pc=c->stack[c->sp];
+                     }
                     break;
                 default:
                     break; //0NNN isnt needed for most roms so we will no implement it
@@ -82,10 +92,15 @@ DXYN (display/draw) , so we can test it with the ibm logo rom
             break;
         
         case 0x1000: //goto NNN; , aka jump to NNN
-            c->pc = ((opcode&0x0FFF));
+            c->pc = nnn;
             break;
         
         case 0x2000: // call subroutine at NNNN
+            if(c->sp<16){
+                c->stack[c->sp] = c->pc;
+                c->sp++;
+                c->pc=nnn;
+            }
             break;
 
         case 0x3000 : // if(Vx!=NN) conditional skip next instruction if vx !=nn
@@ -95,34 +110,57 @@ DXYN (display/draw) , so we can test it with the ibm logo rom
             break;
        
         case 0x6000: //set vx to nn
-            x = (opcode&0x0F00)>>8;
-            nn = (opcode&0x00FF);
-            c->V[x] = nn;
+            c->V[x] = kk;
             break;
-        case 0x7000: //Vx+=nn
-            x = (opcode&0x0F00)>>8;
-            nn = (opcode&0x00FF);
-            c->V[x] += nn;
-            break; 
-        case 0xA000: //I=NNN instruction cnt set to address NNN
-            nn = (opcode&0x0FFF);
-            c->I=nn;
+        
+        case 0x7000:
+            c->V[x] = (uint8_t)(c->V[x]+kk);
             break;
-        case 0xD000: // draw the display draw(vx,vy,N)
-            x=(opcode&0x0F00)>>8;
-            y=(opcode&0x00F0)>>4;
-            n = (opcode&0x000F);
 
+        case 0xA000://draw(vx,vy,n)i
+            c->I=nnn;
+            break;
             
+        case 0xD000:{
+            uint8_t vx = c->V[x];
+            uint8_t vy = c->V[y];
 
+            c->V[0xF]=0;
 
+            for(int row = 0; row<n; row++){
+                uint8_t spriteb = c->memory[c->I+row];
+                for(int col=0; col<8; col++){
+                    if(spriteb&(0x80>>col)){
+                        int px = (vx+col)%GFX_W;
+                        int py = (vy+row)%GFX_H;
+                        int idx = py * GFX_W + px;
 
+                        if(c->gfx[idx]==1) c->V[0xF] =1;
+                        c->gfx[idx]^=1;
+                    }
+                }
+            }
+                c->draw_flag=true;
+                break;
+        }
+            default:
+            break;
     }
 
+}
 
+bool chip8_load_rom(Chip8 *c,const char *path){       // DRW Vx, Vy, n
+    FILE *f = fopen(path,"rb");
+    if (!f) return false;
+    fseek(f,0,SEEK_END);
+    long size = ftell(f);
+    rewind(f);
 
-
-
-
-
+    if (size <=0 || (STARTING_ADDRESS+size)>MAX_MEMORY){
+        fclose(f);
+        return false;
+    }
+    size_t nread=fread(&c->memory[STARTING_ADDRESS],1,(size_t)size,f);
+    fclose(f);
+    return nread == (size_t)size;
 }

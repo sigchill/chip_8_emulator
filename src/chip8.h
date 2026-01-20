@@ -36,6 +36,7 @@ typedef struct{
     uint8_t sound_timer; //beeps as long as its not 0
     uint8_t V[REGISTERS_AMOUNT]; //16 general purpose registers called V0-VF
     uint8_t gfx[GFX_W*GFX_H]; //display
+    bool draw_flag;
 }Chip8;
 
 
@@ -51,3 +52,5 @@ void chip8_init(Chip8 *c);
 void chip8_load_font(Chip8 *c);
 /*implements a chip8 cycle fetch-decode-execute*/
 void chip8_cycle(Chip8 *c);
+/*load a rom into the emulator*/
+bool chip8_load_rom(Chip8 *c, const char *path);
