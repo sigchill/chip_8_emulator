@@ -43,17 +43,82 @@ void chip8_load_font(Chip8 *c){
 }
 
 void chip8_cycle(Chip8 *c){
-
-    /*fetch*/
+    
+    
+    
     /*An instruction is two bytes, 
     so we will need to read two successive bytes from memory and combine them into one 16-bit instruction
     we use bitwise opreation we move first intruction 8 bits left and then us OR to add 
     the next byte into the lower bits so we have a whole 16 bit command*/
     uint16_t opcode = (c->memory[c->pc]<<8) | c->memory[c->pc+1];
     c->pc+=2; //increate the program counter
+    uint8_t  x  = (opcode & 0x0F00) >> 8;
+    uint8_t  y  = (opcode & 0x00F0) >> 4;
+    uint8_t  kk = (opcode & 0x00FF);
+    uint16_t nnn = (opcode & 0x0FFF);
+    uint8_t  n  = (opcode & 0x000F);
+    /*decode and execute within each case*/
+    /* for now we will implement the following:
+    00E0 (clear screen)
+1NNN (jump)
+6XNN (set register VX)
+7XNN (add value to register VX)
+ANNN (set index register I)
+DXYN (display/draw) , so we can test it with the ibm logo rom
+    */
+    switch (opcode & 0xF000){
+        case 0x0000:
+         //call , display , flow commands
+            switch(opcode){
+                case 0x00E0: //disp_clear , clear gfx
+                    memset(c->gfx,0,sizeof(c->gfx));
+                    break;
+                case 0x00EE: //return , pc = stack[--sp] , like ret in assembly
+                    break;
+                default:
+                    break; //0NNN isnt needed for most roms so we will no implement it
 
-    /*decode*/
-    
+            }
+            break;
+        
+        case 0x1000: //goto NNN; , aka jump to NNN
+            c->pc = ((opcode&0x0FFF));
+            break;
+        
+        case 0x2000: // call subroutine at NNNN
+            break;
+
+        case 0x3000 : // if(Vx!=NN) conditional skip next instruction if vx !=nn
+            break;
+        
+        case 0x5000: // if(VX=NN) conditional skip next instrctuion if vx==nn
+            break;
+       
+        case 0x6000: //set vx to nn
+            x = (opcode&0x0F00)>>8;
+            nn = (opcode&0x00FF);
+            c->V[x] = nn;
+            break;
+        case 0x7000: //Vx+=nn
+            x = (opcode&0x0F00)>>8;
+            nn = (opcode&0x00FF);
+            c->V[x] += nn;
+            break; 
+        case 0xA000: //I=NNN instruction cnt set to address NNN
+            nn = (opcode&0x0FFF);
+            c->I=nn;
+            break;
+        case 0xD000: // draw the display draw(vx,vy,N)
+            x=(opcode&0x0F00)>>8;
+            y=(opcode&0x00F0)>>4;
+            n = (opcode&0x000F);
+
+            
+
+
+
+    }
+
 
 
 
