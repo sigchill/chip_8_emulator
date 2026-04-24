@@ -9,7 +9,8 @@ load the font into 0x50
 address starts at 0x200
 */
 /* built-in font, with sprite data representing the hexadecimal numbers */
-static const uint8_t chip8_font[80] = {  0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+static const uint8_t chip8_font[80] = {
+    0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
     0x20, 0x60, 0x20, 0x20, 0x70, // 1
     0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
     0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
@@ -74,10 +75,12 @@ DXYN (display/draw) , so we can test it with the ibm logo rom
         case 0x0000:
          //call , display , flow commands
             switch(opcode){
+                //cls
                 case 0x00E0: //disp_clear , clear gfx
                     memset(c->gfx,0,sizeof(c->gfx));
                     c->draw_flag=true;
                     break;
+                    //ret 
                 case 0x00EE:
                      //return , pc = stack[--sp] , like ret in assembly
                      if(c->sp>0){
@@ -90,11 +93,11 @@ DXYN (display/draw) , so we can test it with the ibm logo rom
 
             }
             break;
-        
+        //jmp
         case 0x1000: //goto NNN; , aka jump to NNN
             c->pc = nnn;
             break;
-        
+        //call
         case 0x2000: // call subroutine at NNNN
             if(c->sp<16){
                 c->stack[c->sp] = c->pc;
@@ -121,7 +124,7 @@ DXYN (display/draw) , so we can test it with the ibm logo rom
             c->I=nnn;
             break;
             
-        case 0xD000:{
+        case 0xD000:{ //DRW Vx, Vy, n
             uint8_t vx = c->V[x];
             uint8_t vy = c->V[y];
 
@@ -149,17 +152,27 @@ DXYN (display/draw) , so we can test it with the ibm logo rom
 
 }
 
-bool chip8_load_rom(Chip8 *c,const char *path){       // DRW Vx, Vy, n
+
+//load rom into memory starting at 0x200
+bool chip8_load_rom(Chip8 *c,const char *path){  
+    // load rom into memory starting at 0x200
+    //open the file in binary mode
     FILE *f = fopen(path,"rb");
+    //check if file opened successfully
     if (!f) return false;
+    //seek to end of file to determine its size
     fseek(f,0,SEEK_END);
+    //get the size of the file
     long size = ftell(f);
+    //seek back to beginning of file
     rewind(f);
 
+    //check for overflows
     if (size <=0 || (STARTING_ADDRESS+size)>MAX_MEMORY){
         fclose(f);
         return false;
     }
+    //read the file into memory starting at 0x200
     size_t nread=fread(&c->memory[STARTING_ADDRESS],1,(size_t)size,f);
     fclose(f);
     return nread == (size_t)size;
