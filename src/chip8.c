@@ -106,18 +106,86 @@ DXYN (display/draw) , so we can test it with the ibm logo rom
             }
             break;
 
-        case 0x3000 : // if(Vx!=NN) conditional skip next instruction if vx !=nn
+        // SE Vx, byte - skip next instruction if Vx = kk
+        case 0x3000:
+                if(c->V[x] == kk) c->pc+=2;
             break;
         
+        //SNE Vx, byte - skip next instruction if Vx != kk
+        case 0x4000:
+                 if(c->V[x] != kk) c->pc+=2;
+            break;
+        
+        // SE Vx, Vy - skip next instruction if Vx = Vy
         case 0x5000: // if(VX=NN) conditional skip next instrctuion if vx==nn
+            if(n == 0 && c->V[x] == c->V[y]) c->pc+=2;
             break;
        
-        case 0x6000: //set vx to nn
+        //LD Vx, byte - set Vx = kk
+        case 0x6000: //set vx to kk
             c->V[x] = kk;
             break;
         
+        //ADD Vx, byte - set Vx = Vx + kk
         case 0x7000:
             c->V[x] = (uint8_t)(c->V[x]+kk);
+            break;
+        
+        //logical and arithmetic operations
+        case 0x8000:
+            switch(opcode & 0x000F){
+                //LD Vx, Vy - set Vx = Vy
+                case 0x0000: //set vx to vy
+                    c->V[x] = c->V[y];
+                    break;
+                //OR Vx, Vy - set Vx = Vx OR Vy
+                case 0x0001:
+                    c->V[x] |= c->V[y];
+                    break;
+                
+                case 0x0002: //AND Vx, Vy - set Vx = Vx AND Vy
+                    c->V[x] &= c->V[y];
+                    break;
+
+                case 0x0003: //XOR Vx, Vy - set Vx = Vx XOR Vy
+                    c->V[x] ^= c->V[y];
+                    break;
+                case 0x0004: //ADD Vx, Vy - set Vx = Vx + Vy, set VF = carry
+                    {
+                        uint16_t sum = c->V[x] + c->V[y];
+                        c->V[0xF] = (sum > 0xFF) ? 1 : 0; //set carry flag to 1 if bigger than 255
+                        c->V[x] = (uint8_t)sum; //store the result in Vx
+                    }
+                    break;
+                case 0x0005: //SUB Vx, Vy - set Vx = Vx - Vy, set VF = NOT borrow
+                    {
+                        c->V[0xF] = (c->V[x] >= c->V[y]) ? 1 : 0; //set borrow flag to 0 if vx>=vy
+                        c->V[x] = (uint8_t)(c->V[x] - c->V[y]);
+                    }
+                    break;
+                case 0x0006: //SHR Vx, set Vx = SHR 1 ,if lsb of vx is 1 then vf set to 1
+                    c->V[0xF] = c->V[x]&0x1u;
+                    c->V[x]>>=1;
+                    break;
+                //SUBN Vx, Vy - set Vx = Vy - Vx, set VF = NOT borrow
+                case 0x0007:
+                    {
+                        c->V[0xF]=(c->V[y]>=c->V[x])?1:0; //set borrow flag to 0 if vy>=vx
+                        c->V[x] = (uint8_t)(c->V[y] - c->V[x]);
+                    }
+                    break;
+                case 0x000E: //SHL Vx, set Vx = Vx SHL 1, VF is old MSB
+                    c->V[0xF] = (c->V[x] & 0x80u) ? 1 : 0;
+                    c->V[x] <<= 1;
+                    break;
+                default:
+                    break;
+            }
+            break;
+
+        // SNE Vx, Vy - skip next instruction if Vx != Vy
+        case 0x9000:
+            if(n == 0 && c->V[x] != c->V[y]) c->pc+=2;
             break;
 
         case 0xA000://draw(vx,vy,n)i
@@ -146,6 +214,27 @@ DXYN (display/draw) , so we can test it with the ibm logo rom
                 c->draw_flag=true;
                 break;
         }
+        case 0xF000:
+            switch(kk){
+                case 0x33: // BCD: store hundreds, tens, ones of Vx at I, I+1, I+2
+                    c->memory[c->I] = c->V[x] / 100;
+                    c->memory[c->I + 1] = (c->V[x] / 10) % 10;
+                    c->memory[c->I + 2] = c->V[x] % 10;
+                    break;
+                case 0x55: // store V0 through Vx in memory starting at I
+                    for(uint8_t i = 0; i <= x; i++){
+                        c->memory[c->I + i] = c->V[i];
+                    }
+                    break;
+                case 0x65: // load V0 through Vx from memory starting at I
+                    for(uint8_t i = 0; i <= x; i++){
+                        c->V[i] = c->memory[c->I + i];
+                    }
+                    break;
+                default:
+                    break;
+            }
+            break;
             default:
             break;
     }

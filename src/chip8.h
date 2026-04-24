@@ -34,16 +34,20 @@ typedef struct{
     //16 built in character spriites
     //0x200-0xFFF for program ROM 
     uint8_t memory[MAX_MEMORY];
-    uint16_t pc; //prgrm cnt
+    uint16_t pc; //prgrm cnt holds the address of next instruciton to xcute
+    //index register - used for storing memory addresses
     uint16_t I; // index 
+    //8 bit stack pointer tells us where we are in the stack
     uint8_t sp; //stack points
+    //16 input keys 0x0-0xF
     uint8_t keys[KEYS_AMOUNT]; //keypad keys EX9E...etc
+    //stack is 16 lvls deep, used to store return addresses when subroutines are called
     uint16_t stack[STACK_SIZE];
     uint8_t delay_timer; //decrements at rate of 60hz until it reaches 0
     uint8_t sound_timer; //beeps as long as its not 0
     uint8_t V[REGISTERS_AMOUNT]; //16 general purpose registers called V0-VF
     //each register can hgold value 0x00 to 0xFF 
-    uint8_t gfx[GFX_W*GFX_H]; //display
+    uint8_t gfx[GFX_W*GFX_H]; //display 64px32px monochrome
     bool draw_flag;
 }Chip8;
 

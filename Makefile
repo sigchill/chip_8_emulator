@@ -4,7 +4,7 @@ LDFLAGS :=
 LDLIBS  := -lSDL2
 
 TARGET  := chip8
-SRCS    := src/main.c src/chip8.c
+SRCS    := src/main.c src/chip8.c src/platform.c
 OBJS    := $(SRCS:.c=.o)
 
 all: $(TARGET)
@@ -12,7 +12,7 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-%.o: %.c src/chip8.h
+%.o: %.c src/chip8.h src/platform.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 run: $(TARGET)
@@ -22,4 +22,3 @@ clean:
 	rm -f $(TARGET) $(OBJS)
 
 .PHONY: all clean run
-
