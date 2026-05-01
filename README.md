@@ -1,21 +1,91 @@
-# chip_8_emulator
-## This is a chip-8 emulator in the building
+# CHIP-8 Emulator
 
-about me : im interested in low level stuff, revrse engineering, pwn, systems in general
-so to strengthen my programming skills i though i'd build a chip-8 emulaotr which is considered by most a very feasible feat for a single person
+A fully functional CHIP-8 emulator written in C, capable of running classic ROMs including Pong, Tetris, and Space Invaders.
 
+> Built to deepen my understanding of low-level systems, CPU emulation, and memory-mapped I/O.
 
-##CHIP-8 has the following components:
+---
 
-Memory: CHIP-8 has direct access to up to 4 kilobytes of RAM
-Display: 64 x 32 pixels (or 128 x 64 for SUPER-CHIP) monochrome, ie. black or white
-A program counter, often called just “PC”, which points at the current instruction in memory
-One 16-bit index register called “I” which is used to point at locations in memory
-A stack for 16-bit addresses, which is used to call subroutines/functions and return from them
-An 8-bit delay timer which is decremented at a rate of 60 Hz (60 times per second) until it reaches 0
-An 8-bit sound timer which functions like the delay timer, but which also gives off a beeping sound as long as it’s not 0
-16 8-bit (one byte) general-purpose variable registers numbered 0 through F hexadecimal, ie. 0 through 15 in decimal, called V0 through VF
+## Features
 
+- Full implementation of the 35 CHIP-8 opcodes
+- 64x32 monochrome display rendering
+- 4KB memory with proper font sprite loading
+- 16 general-purpose 8-bit registers (V0–VF)
+- Delay and sound timers running at 60Hz
+- Stack-based subroutine calls (16 levels deep)
+- Keyboard input mapping (16-key hex keypad)
 
-resources i  use : http://devernay.free.fr/hacks/chip8/C8TECH10.HTM (the manual for commands)
-                    https://tobiasvl.github.io/blog/write-a-chip-8-emulator/ (this is great its language agonstic you just need to read the logic, it's about chip-8 not how to build it)
+---
+
+## Build & Run
+
+### Requirements
+- GCC or Clang
+- SDL2 (`sudo apt install libsdl2-dev` on Ubuntu)
+
+### Build
+```bash
+git clone https://github.com/sigchill/chip_8_emulator.git
+cd chip_8_emulator
+make
+```
+
+### Run
+```bash
+./chip8 <path-to-rom>
+```
+
+### Example
+```bash
+./chip8 roms/pong.ch8
+```
+
+---
+
+## Architecture
+
+| Component | Implementation |
+|---|---|
+| Memory | 4KB RAM array, programs loaded at 0x200 |
+| Display | 64x32 pixel buffer, rendered via SDL2 |
+| Registers | 16 x 8-bit (V0–VF) + 16-bit Index (I) |
+| Stack | 16-level address stack for subroutines |
+| Timers | Delay + sound timers decremented at 60Hz |
+| Input | SDL2 keyboard mapped to 16-key hex pad |
+
+---
+
+## Opcode Coverage
+
+All 35 standard CHIP-8 opcodes implemented, including:
+
+- `00E0` — Clear display
+- `1NNN` — Jump to address
+- `6XNN` — Set register VX
+- `DXYN` — Draw sprite (XOR-based, sets VF on collision)
+- `FX33` — BCD representation
+- `FX55/FX65` — Register store/load to memory
+
+---
+
+## What I Learned
+
+- How a CPU fetch-decode-execute cycle works at the implementation level
+- Memory-mapped I/O and how display buffers work
+- Bitwise operations for opcode decoding (masking, shifting)
+- How timers and interrupts are approximated in software
+- Debugging with test ROMs to isolate opcode failures
+
+---
+
+## Resources
+
+- [Cowgod's CHIP-8 Technical Reference](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM)
+- [tobiasvl's Guide (language-agnostic)](https://tobiasvl.github.io/blog/write-a-chip-8-emulator/)
+
+---
+
+## Author
+
+**sigchill** — interested in low-level systems, reverse engineering, and systems programming.
